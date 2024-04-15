@@ -32,10 +32,11 @@ appropriate file protections in place.
     a new column will be added to the right containing the status of each line
     
 ### Running the script
-    py veracode-verify-scan-results.py -a <application_name> -m <minimum_severity> [--sandbox_name <sandbox_name>] [-s] [-f (fail if results are found)] [-d]"
+    py veracode-verify-scan-results.py -a <application_name> -m <minimum_severity> [--sandbox_name <sandbox_name>] [-s] [-f (fail if results are found)] [-l] [-d]"
         Reads the results of the latest scan for the application called <application_name>, (and optionally a sandbox called <sandbox_name>).
         Returns all the results that are of severity <minimum_severity> or greater (optionally including SCA results if -s is passed)
         Passing the -f flag will return an error code equal to the number of findings identified.
+        Passing the -l flag will return the results in a multiline format, instead of 1 finding per line.
 
 If a credentials file is not created, you can export the following environment variables:
 

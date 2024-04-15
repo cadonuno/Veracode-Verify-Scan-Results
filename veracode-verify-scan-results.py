@@ -5,7 +5,6 @@ import json
 import urllib.parse
 from veracode_api_signing.plugin_requests import RequestsAuthPluginVeracodeHMAC
 import time
-import xml.etree.ElementTree as ET  # for parsing XML
 
 from veracode_api_signing.credentials import get_credentials
 
@@ -89,10 +88,11 @@ sleep_time = 10
 
 def print_help():
     """Prints command line options and exits"""
-    print("""veracode-verify-scan-results.py -a <application_name> -m <minimum_severity> [--sandbox_name <sandbox_name>] [-s] [-f (fail if results are found)] [-d]"
+    print("""veracode-verify-scan-results.py -a <application_name> -m <minimum_severity> [--sandbox_name <sandbox_name>] [-s] [-f (fail if results are found)] [-l] [-d]"
         Reads the results of the latest scan for the application called <application_name>, (and optionally a sandbox called <sandbox_name>).
         Returns all the results that are of severity <minimum_severity> or greater (optionally including SCA results if -s is passed)
         Passing the -f flag will return an error code equal to the number of findings identified.
+        Passing the -l flag will return the results in a multiline format, instead of 1 finding per line.
 """)
     sys.exit()
 
@@ -308,36 +308,21 @@ def get_sca_findings(api_base, application_guid, results_filter_string, sandbox_
         
     return sca_findings
 
-def print_sast(sast_findings):
+def print_sast(sast_findings, multiline):
+    separator = "\n  " if multiline else " | "
     for finding in sast_findings:
-        print(f"  Issue ID: {finding.issue_id}")
-        print(f"  Description: {finding.description}")
-        print(f"  Severity: {finding.severity}")
-        print(f"  CWE: {finding.cwe_id}")
-        print(f"  CWE Name: {finding.cwe_name}")
-        print(f"  File Path: {finding.file_path}")
-        print(f"  Line Number: {finding.line_number}")
-        print(f"  Finding Category: {finding.finding_category}")
-        print_half_line_across()
+        print(f"""  Issue ID: {finding.issue_id}{separator}Description: {finding.description}{separator}Severity: {finding.severity}{separator}CWE: {finding.cwe_id}{separator}CWE Name: {finding.cwe_name}{separator}File Path: {finding.file_path}{separator}Line Number: {finding.line_number}{separator}Finding Category: {finding.finding_category}""")
+        if multiline:
+            print_half_line_across()
 
-def print_sca(sca_findings):
+def print_sca(sca_findings, multiline):
+    separator = "\n  " if multiline else " | "
     for finding in sca_findings:
-        print(f"  Component Name: {finding.component_name}")
-        print(f"  Component Version: {finding.component_version}")
-        print(f"  Description: {finding.description}")
-        print(f"  Severity: {finding.severity}")
-        print(f"  CWE: {finding.cwe_id}")
-        print(f"  CWE Name: {finding.cwe_name}")
-        print(f"  CVE: {finding.cve}")
-        print(f"  CVE Link: {finding.cve_link}")
-        print(f"  CVSSv2: {finding.cvss2}")
-        print(f"  CVSSv3: {finding.cvss3}")
-        print(f"  EPSS Score: {finding.epss_score}")
-        print(f"  EPSS Percentile: {finding.epss_percentile}")
-        print_half_line_across()
-        
+        print(f"""  Component Name: {finding.component_name}{separator}Component Version: {finding.component_version}{separator}Description: {finding.description}{separator}Severity: {finding.severity}{separator}CWE: {finding.cwe_id}{separator}CWE Name: {finding.cwe_name}{separator}CVE: {finding.cve}CVE Link: {finding.cve_link}{separator}CVSSv2: {finding.cvss2}{separator}CVSSv3: {finding.cvss3}{separator}EPSS Score: {finding.epss_score}{separator}EPSS Percentile: {finding.epss_percentile}{separator}""")
+        if multiline:
+            print_half_line_across()
 
-def read_scan_results(api_base, application_name, sandbox_name, results_filters: Results_filters, fail_on_findings, verbose):
+def read_scan_results(api_base, application_name, sandbox_name, results_filters: Results_filters, fail_on_findings, multiline, verbose):
     print(f"Getting scan results for application: {application_name}")
     if sandbox_name:
         print(f"    and sandbox: {sandbox_name}")
@@ -359,7 +344,7 @@ def read_scan_results(api_base, application_name, sandbox_name, results_filters:
     if sast_findings:
         total_findings = len(sast_findings)
         print(f"Found {total_findings} SAST findings:")
-        print_sast(sast_findings)
+        print_sast(sast_findings, multiline)
     else:
         print("Found no SAST findings.")
     print_line_across()
@@ -369,7 +354,7 @@ def read_scan_results(api_base, application_name, sandbox_name, results_filters:
         if sca_findings:
             total_findings = total_findings + len(sca_findings)
             print(f"Found {len(sca_findings)} SCA findings:")
-            print_sca(sca_findings)
+            print_sca(sca_findings, multiline)
         else:
             print("Found no SCA findings.")
         print_line_across()
@@ -394,8 +379,9 @@ def main(argv):
         sandbox_name = ''
         fail_on_findings = False
         consider_sca = False
+        multiline = False
 
-        opts, args = getopt.getopt(argv, "hdfsa:m:", ["application_name=", "minimum_severity=", "sandbox_name="])
+        opts, args = getopt.getopt(argv, "hdflsa:m:", ["application_name=", "minimum_severity=", "sandbox_name="])
         for opt, arg in opts:
             if opt == '-h':
                 print_help()
@@ -405,6 +391,8 @@ def main(argv):
                 fail_on_findings = True
             if opt == '-s':
                 consider_sca = True
+            if opt == '-l':
+                multiline = True
             if opt in ('-a', '--application_name'):
                 application_name=arg
             if opt in ('-m', '--minimum_severity'):
@@ -414,7 +402,7 @@ def main(argv):
 
         api_base = get_api_base()
         if application_name and minimum_severity > 0:
-            read_scan_results(api_base, application_name, sandbox_name, Results_filters(minimum_severity, consider_sca), fail_on_findings, verbose)
+            read_scan_results(api_base, application_name, sandbox_name, Results_filters(minimum_severity, consider_sca), fail_on_findings, multiline, verbose)
         else:
             print_help()
     except requests.RequestException as e:
