@@ -42,7 +42,7 @@ If a credentials file is not created, you can export the following environment v
 
     export VERACODE_API_KEY_ID=<YOUR_API_KEY_ID>
     export VERACODE_API_KEY_SECRET=<YOUR_API_KEY_SECRET>
-    python bulk-update-users-permissions.py -f <excel_file_with_user_information> [-d]
+    py veracode-verify-scan-results.py -a <application_name> -m <minimum_severity> [--sandbox_name <sandbox_name>] [-s] [-f (fail if results are found)] [-l] [-d]
 
 ## License
 
