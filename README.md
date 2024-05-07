@@ -26,11 +26,6 @@ appropriate file protections in place.
     veracode_api_key_id = <YOUR_API_KEY_ID>
     veracode_api_key_secret = <YOUR_API_KEY_SECRET>
 
-
-### Preparing the Excel Template
-    The Excel template present in the repository can be used to prepare the metadata. After the script finishes execution,
-    a new column will be added to the right containing the status of each line
-    
 ### Running the script
     py veracode-verify-scan-results.py -a <application_name> -m <minimum_severity> [--sandbox_name <sandbox_name>] [-s] [-f (fail if results are found)] [-l] [-d]"
         Reads the results of the latest scan for the application called <application_name>, (and optionally a sandbox called <sandbox_name>).
